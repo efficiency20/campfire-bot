@@ -107,10 +107,13 @@ module CampfireBot
             sleep interval
           rescue Timeout::Error => e
             if @timeouts < 5
-              sleep(5 * @timeouts)
+              seconds_pause = 5 * @timeouts
+              @log.error "Timed out #{@timeouts + 1} times. Will retry in #{seconds_pause} seconds."
+              sleep(seconds_pause)
               @timeouts += 1
               retry
             else
+              @log.error "Exceeded number of timeouts, raising #{e.message}"
               raise e.message
             end
           end
