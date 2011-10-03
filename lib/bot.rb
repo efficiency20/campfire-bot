@@ -140,7 +140,7 @@ module CampfireBot
 
     def campfire_options
       opts = { :token => @config['api_key'] }
-      opts.merge!(:ssl_verify => @config[:ssl_verify]) unless @config[:ssl_verify].nil?
+      opts.merge!(:ssl_verify => @config['ssl_verify']) unless @config['ssl_verify'].nil?
       opts
     end
 
