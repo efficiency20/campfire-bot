@@ -33,11 +33,11 @@ module CampfireBot
       @rooms    = {}
       @root_logger = Logging.logger["CampfireBot"]
       @log = Logging.logger[self]
-      
+
       # TODO much of this should be configurable per environment
-      @root_logger.add_appenders Logging.appenders.rolling_file("#{BOT_ROOT}/var/#{BOT_ENVIRONMENT}.log", 
+      @root_logger.add_appenders Logging.appenders.rolling_file("#{BOT_ROOT}/var/#{BOT_ENVIRONMENT}.log",
                             :layout => Logging.layouts.pattern(:pattern => "%d | %-6l | %-12c | %m\n"),
-                            :age => 'daily', 
+                            :age => 'daily',
                             :keep => 7)
       @root_logger.level = @config['log_level'] rescue :info
     end
@@ -52,13 +52,13 @@ module CampfireBot
       rescue Exception => e
         @log.fatal "Unhandled exception while joining rooms: #{e.class}: #{e.message} \n #{$!.backtrace.join("\n")}"
         abort "Unhandled exception while joining rooms: #{e.class}: #{e.message} \n #{$!.backtrace.join("\n")}"
-      end  
+      end
     end
 
     def run(interval = 5)
       catch(:stop_listening) do
         trap('INT') { throw :stop_listening }
-        
+
         # since room#listen blocks, stick it in its own thread
         @rooms.each_pair do |room_name, room|
           Thread.new do
@@ -66,7 +66,7 @@ module CampfireBot
               room.listen(:timeout => 8) do |raw_msg|
                 handle_message(CampfireBot::Message.new(raw_msg.merge({:room => room})))
               end
-            rescue Exception => e 
+            rescue Exception => e
               trace = e.backtrace.join("\n")
               abort "something went wrong! #{e.message}\n #{trace}"
             end
@@ -86,7 +86,7 @@ module CampfireBot
               # EventHanlder.handle_time(optional_arg = Time.now)
 
               # Run time-oriented events
-              Plugin.registered_intervals.each  do |handler| 
+              Plugin.registered_intervals.each  do |handler|
                 begin
                   handler.run(CampfireBot::Message.new(:room => room))
                 rescue
@@ -94,7 +94,7 @@ module CampfireBot
                 end
               end
 
-              Plugin.registered_times.each_with_index  do |handler, index| 
+              Plugin.registered_times.each_with_index  do |handler, index|
                 begin
                   Plugin.registered_times.delete_at(index) if handler.run
                 rescue
@@ -127,15 +127,21 @@ module CampfireBot
       join_rooms_as_user
       @log.info "Joined all rooms."
     end
-    
+
     def join_rooms_as_user
-      @campfire = Tinder::Campfire.new(@config['site'], :token => @config['api_key'])
+      @campfire = Tinder::Campfire.new(@config['site'], campfire_options)
 
       @config['rooms'].each do |room_name|
         @rooms[room_name] = @campfire.find_room_by_name(room_name)
         raise Exception.new("couldn't find a room named #{room_name}!") if @rooms[room_name].nil?
         res = @rooms[room_name].join
       end
+    end
+
+    def campfire_options
+      opts = { :token => @config['api_key'] }
+      opts.merge!(:ssl_verify => @config[:ssl_verify]) unless @config[:ssl_verify].nil?
+      opts
     end
 
     def load_plugins
@@ -160,7 +166,7 @@ module CampfireBot
           @log.info "got kicked... rejoining after 10 seconds"
           sleep 10
           join_rooms_as_user
-          @log.info "rejoined room." 
+          @log.info "rejoined room."
           return
         end
       when "TimestampMessage", "AdvertisementMessage"
