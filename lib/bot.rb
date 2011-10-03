@@ -68,6 +68,7 @@ module CampfireBot
               end
             rescue Exception => e
               trace = e.backtrace.join("\n")
+              @log.fatal "Unhandled exception while listening to room #{room_name}: #{e.message}\n #{trace}"
               abort "something went wrong! #{e.message}\n #{trace}"
             end
           end
