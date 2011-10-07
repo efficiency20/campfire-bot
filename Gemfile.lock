@@ -1,6 +1,6 @@
 GIT
   remote: git://github.com/noahd1/tinder.git
-  revision: b9b217050298733ad455146f20db7f8d5070467f
+  revision: e3c8012dc12762128c068fa69175740be7d4ec42
   branch: on_error
   specs:
     tinder (1.8.0)
